@@ -1,7 +1,17 @@
+# 依赖和构建结果
 node_modules/
+.pnpm-store/
 dist/
 .venv/
-data/
-.env
-*.zip
 __pycache__/
+*.pyc
+
+# 本机论文库、恢复副本和备份
+/data/
+/*.before-restore-*/
+*.zip
+
+# 本机设置与凭据
+.env
+.env.*
+!.env.example

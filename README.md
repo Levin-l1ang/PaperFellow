@@ -1,85 +1,84 @@
-# Paper Companion
+# PaperFellow
 
-Paper Companion 是一个本地运行的论文精读工作台。导入 PDF 后，可以同时查看原文和流式生成的中文讲解，针对段落进行多轮讨论，并自动保存阅读位置、进度与笔记。论文库初始为空。
+PaperFellow 是一个本地论文精读工作台。导入 PDF 后，可以逐段对照英文原文和中文伴读，提问、做理解题，并自动保存阅读进度与笔记。
 
-## 安装与启动
+## Windows 启动
 
-需要 Node.js **24 或更新版本**、Python **3.11 或更新版本**，以及已登录的官方 Codex CLI。Windows PowerShell 在本目录执行一次依赖安装。
+1. 在项目文件夹双击 `Start-PaperFellow.cmd`。
+2. 启动器会打开默认浏览器。也可以直接访问 [http://127.0.0.1:4317](http://127.0.0.1:4317)。
+
+启动器可使用 PATH 上的 Node 和 Codex，也可查找 Windows Codex 桌面版自带的运行时。服务已在运行时，再次双击会打开同一个页面，启动提示窗口会等待按键。若本次双击启动了新服务，请保持该窗口打开，按 `Ctrl+C` 可停止服务。
+
+### 首次安装或迁移
+
+在新电脑上准备 Node.js 24 或更新版本、Python 3.11 或更新版本，并登录 Codex。把项目放到本机后，在项目目录执行一次依赖安装。
 
 ```powershell
-npm install
+# 已有 pnpm 时，按锁文件安装 JavaScript 依赖
+pnpm install --frozen-lockfile
+
+# 使用 npm 时，替换上面一行即可
+# npm.cmd install
+
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-codex --version
-codex login status
 ```
 
-如果已安装 pnpm，可以用 `pnpm install --frozen-lockfile` 按项目锁文件安装 JavaScript 依赖。macOS 和 Linux 的 Python 安装命令如下。
+已有 `.venv` 时，直接运行最后一行更新 Python 依赖。Node.js 的 npm 随 Node 安装，Python 依赖通过 pip 安装。
 
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-```
+安装后双击 `Start-PaperFellow.cmd`。在 Node.js 已加入 PATH 的终端，运行 `node scripts/start.mjs` 也能启动。macOS 或 Linux 可用 `python3 -m venv .venv` 和 `.venv/bin/python -m pip install -r requirements.txt` 安装 Python 依赖，再运行同一个 Node 启动命令。首次启动或前端文件更新后，应用会自动构建页面。
 
-日常启动只需一条命令。首次或前端源文件更新时，启动器会构建前端。
+## 导入与阅读
 
-```sh
-npm start
-```
+- **后台伴读**。点击「导入 PDF」或拖入文件。索引完成后，新论文会出现在论文库，正文伴读立即加入后台队列。可在论文库查看进度、暂停或继续，也可在设置改为「仅摘要」或关闭。重复导入会沿用已有记录。单文件上限为 80 MB、400 页。
+- **关闭与续读**。关闭浏览器标签页后，本机服务仍会处理后台队列。停止服务后，未完成任务会标记为中断。重启后可从已有内容继续生成，或点击「继续阅读」恢复位置。
+- **阅读布局**。用左侧目录跳转，拖动中间分隔线调整栏宽，或切换同步和独立滚动。右上角的面板按钮可收起 AI 伴读栏，原文会切换为宽版。应用会记住右栏状态。
+- **理解检测**。在阅读页点「理解检测」，为当前章节生成一组三道单选题。提交后显示解析和原文段落链接，下次打开会恢复已保存的题目与作答记录。
+- **讨论与研究笔记**。选中原文即可引用提问、加高亮或写批注。研究笔记可按来源和分类查看，支持生成全文评价和导出 Markdown。当前论文的对话和出题优先于该论文的后台伴读。
+- **原始 PDF**。点 `PDF p.` 可查看对应页面。复杂版式、公式、图表和扫描件可回到原始 PDF 校对，也可按页请求视觉分析。伴读支持 Markdown、LaTeX、表格、Mermaid 和经校验的交互图表。
 
-也可以直接运行 `node scripts/start.mjs`。默认访问 [http://127.0.0.1:4317](http://127.0.0.1:4317)。在启动终端按 `Ctrl+C` 可停止应用；再运行启动命令，打开「继续阅读」即可恢复。
+## 模型与配置
 
-### 模型和认证
+默认采用官方 Codex app-server 和本机 ChatGPT 登录。可在设置查看连接状态、选择模型和修改阅读提示词。首次使用独立 Codex CLI 时，可运行 `codex login`。生成伴读、视觉分析、理解题或回答问题时，相关原文、图像或讨论上下文会发给所选模型。已保存的论文和伴读可离线阅读。
 
-- 默认通过 CLI 的官方 `codex app-server` 连接本机 ChatGPT 登录会话。首次需要登录时运行 `codex login`，然后在设置中点击「检查已保存的连接」。模型留空时使用 Codex 默认模型，已登录账户的 Codex 额度和模型权限适用。测试环境检测到 `codex-cli 0.169.0-alpha.11.1` 与 ChatGPT 登录。
-- 用户明确选择「OpenAI API · 独立计费」时，服务才会调用官方 Responses API。先由启动环境提供 `OPENAI_API_KEY`，或在项目根目录的 `.env` 中配置，然后在设置里输入账户可访问的模型 ID 并勾选计费确认。两种 Provider 的错误会直接展示。模型凭据仅由本机 CLI 或后端使用。
-- PDF、笔记及进度保存在本机。生成伴读或提问时，应用将相关原文片段、必要的图像和讨论上下文提交给当前 Provider。关闭设置中的自动生成后，打开论文与阅读缓存均可离线进行。
+OpenAI API 是独立计费选项。启用时，在设置选择对应 Provider、填写模型 ID，并通过环境变量或 `.env` 提供 `OPENAI_API_KEY`。
 
-[Codex app-server 官方文档](https://learn.chatgpt.com/docs/app-server) · [Codex 认证](https://learn.chatgpt.com/docs/auth) · [Responses 流式事件](https://developers.openai.com/api/docs/guides/streaming-responses)
+将 [`.env.example`](.env.example) 复制为 `.env` 后可修改默认配置。系统环境变量优先。
 
-### 可选环境变量
-
-可复制 `.env.example` 为 `.env`。系统已设置的同名环境变量优先。
-
-| 变量 | 默认值与用途 |
+| 变量 | 用途 |
 | --- | --- |
-| `PC_PORT` | `4317`，服务只监听 `127.0.0.1` |
-| `PC_DATA_DIR` | 项目内 `data/`，可指定其他本地目录 |
-| `PC_PYTHON` | 优先使用项目 `.venv`，也可指定 PyMuPDF 已安装的 Python 可执行文件 |
-| `PC_CODEX` | 从 PATH 查找官方 Codex，可指定绝对路径。Windows 请使用 `codex.exe` |
-| `OPENAI_API_KEY` | 仅在已选择 OpenAI API Provider 时读取 |
+| `PC_PORT` | 默认 `4317`，服务只监听 `127.0.0.1` |
+| `PC_DATA_DIR` | 默认项目中的 `data/`，也可指定项目外的本地目录 |
+| `PC_PYTHON` | 默认优先使用项目 `.venv`，也可指定已安装 PyMuPDF 的 Python |
+| `PC_CODEX` | 指定官方 Codex 可执行文件。双击 Windows 启动脚本时，可提前设置同名环境变量覆盖自动查找 |
+| `OPENAI_API_KEY` | 选择 OpenAI API Provider 后使用 |
 
-## 阅读和笔记
+[Codex app-server 官方文档](https://learn.chatgpt.com/docs/app-server) · [Codex 认证](https://learn.chatgpt.com/docs/auth)
 
-1. 点击「导入 PDF」或拖入一篇或多篇论文。应用保存原件并构建索引。新论文在论文库出现后，服务器会立即排队生成正文的中文伴读。可以在设置中改为「仅摘要」或关闭导入预生成。重复导入沿用已有记录。当前上限是单文件 80 MB、400 页。
-2. 点击左侧目录切换章节。同步模式由同一个滚动容器呈现原文和解释。独立模式支持双栏各自滚动。拖动栏目标题间的把手调整宽度，或聚焦把手后使用左右方向键。每个原文段落头部的 `PDF p.` 链接打开对应的原始页。
-3. 论文库可以查看、暂停和继续后台生成。关闭浏览器标签页时，本机服务继续处理后台队列。关闭服务后，未完成的任务会显示为中断，可从已有段落继续。当前论文的对话和出题优先于该论文的后台伴读。手动生成、重试和重新生成仍可在阅读页使用。
-4. 选中原文即可引用提问、加高亮或写批注。问题可直接记为开放研究问题。AI 会获得本节原文、相关跨节片段及本论文先前讨论。阅读笔记中可按来源和分类查看、编辑、导出，也可按需生成带证据引用的全文评价。
-5. 导出 Markdown 包括分类笔记、读者批注与高亮、已有逐段讲解、推导和批判性分析。导出前可在「研究笔记」生成全文评价。设置中的 System Prompt 可编辑并即时用于后续模型轮次，缓存保留至手动重新生成。
-6. 在阅读页使用右上角的侧栏按钮收起 AI 伴读，切换为宽版原文阅读。点击「理解检测」打开右侧抽屉，根据本节原文生成三道理解题。提交后显示解析和原文段落链接，题目与作答记录自动保存。
+## 数据、备份与恢复
 
-## PDF 保真范围
+`data/` 保存原始 PDF、页面裁图和 `papers.sqlite`。数据库记录章节索引、伴读缓存、阅读进度、对话、批注、笔记、题目和作答结果。需要续读时会尝试恢复对应的 Codex 线程，迁移后也可用保存的论文证据和讨论历史建立新线程。
 
-PyMuPDF 根据 PDF 的文字、坐标、字体、书签和栏位组织原文，保留引用编号和页码。标题、作者、年份和 DOI 优先取 PDF 的可见或嵌入信息。检测到的展示公式、图形与表格可以保留为原始页裁图，检测到的表格文字层另外以表格显示。未知元数据、无书签的复杂版式、无网格表格及损坏字体的识别结果取决于 PDF 文件。多栏与目录识别采用版式启发式，扫描件或不可靠页面可在 PDF.js 中直接查看；「视觉分析」会把该页图像交给支持图像的模型。
+停止服务后，在项目目录执行备份或恢复。请为新备份使用尚不存在的文件名。恢复成功后，程序会显示恢复前数据的保留位置。
 
-## 可视化
-
-右栏、对话与研究笔记原生显示 Markdown、KaTeX、表格和 Mermaid。Mermaid 图表在独立浏览器沙箱中以严格模式渲染。AI 可输出 `paper-viz` 围栏内的 JSON，可视化规格由 Zod 校验。`line`、`bar`、`scatter` 和 `heatmap` 使用数值数据系列。`demo` 使用有限运算符构成的表达式树，以及 slider 或 select 控件，可实现 BM25 文档长度调节和参数曲线。规格示例及 BM25 数值验证见 `tests/core.test.ts`。
-
-## 持久化、备份与迁移
-
-默认数据目录 `data/` 包含 `papers.sqlite` 和 `papers/<SHA-256>/` 中的原始 PDF 及页面裁图。SQLite 保存索引、各论文的章节与段落、两栏滚动位置、阅读状态、生成缓存、会话历史、Codex Thread ID、批注、笔记、提示词和设置。需要续读时，应用尝试通过官方协议恢复对应 Codex Thread。如果换了电脑或原 Codex Thread 已丢失，应用会建立新的 Thread，并从 SQLite 提供已保存的论文证据和讨论历史。
-
-**停止应用后**运行备份或恢复。备份文件路径必须尚不存在。恢复会保留原数据目录的副本并显示其路径。
-
-```sh
-npm run backup -- paper-companion.zip
-npm run restore -- paper-companion.zip
+```powershell
+node scripts/backup.mjs backup paperfellow-backup.zip
+node scripts/backup.mjs restore paperfellow-backup.zip
 ```
 
-备份包含应用的本地资料和设置。Codex 的独立登录状态、模型凭据与 `.env` 由用户在新电脑上重新配置。应用默认面向本机单用户，使用目录锁避免多个应用进程写入同一个数据目录。
+如果普通 PowerShell 找不到 `node`，可以先用下面的命令定位 Codex 桌面版自带的 Node，再用 `& $node` 代替上面命令开头的 `node`。
+
+```powershell
+$runtime = Get-AppxPackage -Name 'OpenAI.CodexPrimaryRuntime*' | Select-Object -First 1
+$node = Join-Path $runtime.InstallLocation 'dependencies\node\bin\node.exe'
+# 例如：& $node scripts/backup.mjs backup paperfellow-backup.zip
+```
+
+备份包含论文和阅读资料。迁移时需要在新电脑重新配置登录、模型凭据及 `.env`。Git 会忽略默认论文库、恢复前的资料目录、本地配置、依赖和构建产物。
 
 ## 开发与测试
+
+`src/` 是前端，`shared/` 定义客户端与服务端共用的数据结构，`server/` 提供本机 API、后台队列和 SQLite 存储，`scripts/` 包含启动、PDF 解析和备份入口。
 
 ```sh
 npm run check
@@ -87,12 +86,10 @@ npm test
 npm run build
 ```
 
-真实验收需要可用的 ChatGPT Codex 登录和两篇公开 PDF。第一篇测试会针对 Transformer 的 Abstract 提问，第二篇需为双栏。以下命令会实际调用模型，使用当前 Codex 额度，并在隔离目录测试导入、SSE、缓存、问答、阅读状态、强制退出后的恢复、两篇论文会话独立及备份恢复。它不会使用日常论文库。
+端到端测试会在隔离目录使用当前 Codex 额度，验证真实的导入、流式生成、问答和恢复。第一篇测试用 Transformer 论文，第二篇用双栏 BERT 论文。
 
 ```sh
 npm run test:live -- /path/to/attention.pdf /path/to/bert.pdf
 ```
 
 [Attention Is All You Need](https://arxiv.org/abs/1706.03762) · [BERT](https://arxiv.org/abs/1810.04805)
-
-`src/` 包含 React 工作台和浏览器渲染。`shared/` 定义接口和可视化规格。`server/` 包含 localhost API、SSE 任务、模型 Provider 和 SQLite 存储。`scripts/` 包含 Python PDF 索引、备份与启动入口。
